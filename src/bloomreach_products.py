@@ -44,19 +44,38 @@ def apply_mappings(attributes, mappings):
 
 
 def merge_labels(attributes, new_key="labels"):
-    """Merge additional_label + product_labels_values into a new key"""
-    labels_list = []
-    for key in ["spvm.custom.additional_label", "spvm.custom.product_labels_values"]:
-        val = attributes.get(key)
-        if isinstance(val, str):
-            labels_list.extend(v.strip() for v in val.split(",") if v.strip())
-        elif isinstance(val, list):
-            labels_list.extend(v for v in val if v)
+    """Merge labels with special rules:
+       - If labels already exist: append only additional_label
+       - If labels don't exist: create from both additional_label + product_labels_values
+    """
+    existing_labels = attributes.get(new_key, [])
 
-    if labels_list:
+    # Ensure it's a list
+    if isinstance(existing_labels, str):
+        existing_labels = [existing_labels]
+    elif not isinstance(existing_labels, list):
+        existing_labels = []
+
+    if new_key in attributes:
+        # Case 1: labels already exist → add only additional_label
+        val = attributes.get("spvm.custom.additional_label")
+        if isinstance(val, str):
+            existing_labels.extend(v.strip() for v in val.split(",") if v.strip())
+        elif isinstance(val, list):
+            existing_labels.extend(v for v in val if v)
+    else:
+        # Case 2: labels not present → add both keys
+        for key in ["spvm.custom.additional_label", "spvm.custom.product_labels_values"]:
+            val = attributes.get(key)
+            if isinstance(val, str):
+                existing_labels.extend(v.strip() for v in val.split(",") if v.strip())
+            elif isinstance(val, list):
+                existing_labels.extend(v for v in val if v)
+
+    # Deduplicate while preserving order
+    if existing_labels:
         seen = set()
-        labels_list = [x for x in labels_list if not (x in seen or seen.add(x))]
-        attributes[new_key] = labels_list
+        attributes[new_key] = [x for x in existing_labels if not (x in seen or seen.add(x))]
 
 
 def create_product(product, shopify_url):
@@ -74,8 +93,19 @@ def create_product(product, shopify_url):
 
     out_pa["url"] = f"https://{shopify_url}/products/" + in_pa["sp.handle"]
 
-    # ---- PRODUCT LEVEL LABELS ----
-    merge_labels(out_pa, "labels_new")
+    # ---- PRODUCT LEVEL LABELS (unchanged: merge both always) ----
+    labels_list = []
+    for key in ["spvm.custom.additional_label", "spvm.custom.product_labels_values"]:
+        val = in_pa.get(key)
+        if isinstance(val, str):
+            labels_list.extend(v.strip() for v in val.split(",") if v.strip())
+        elif isinstance(val, list):
+            labels_list.extend(v for v in val if v)
+
+    if labels_list:
+        seen = set()
+        labels_list = [x for x in labels_list if not (x in seen or seen.add(x))]
+        out_pa["labels_new"] = labels_list
 
     # set thumb_image from featured image
     if "sp.featuredImage" in in_pa and in_pa["sp.featuredImage"] and "url" in in_pa["sp.featuredImage"]:
