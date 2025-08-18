@@ -114,6 +114,16 @@ PRODUCT_METAFIELD_MAPPINGS = [
    
 ]
 
+VARIANT_MERGING = [
+    [["svm.custom.additional_label", "svm.custom.product_labels_values"], "labels"],
+    [["svm.custom.additional_label", "svm.custom.product_labels_values","svm.custom.shop_by_range" ], "labels1"],
+    [["svm.custom.additional_label", "svm.custom.product_labels_values","svm.custom.shop_by_range","svm.custom.shop_by_room" ], "labels2"],
+    [["svm.custom.additional_label", "svm.custom.product_labels_values","svm.custom.shop_by_range","svm.custom.shop_by_room","svm.custom.variant_colour" ], "labels3"],
+]
+
+
+
+
 def get_metaobject_labels_only(gid_list, graphql_client):
     if not gid_list:
         return []
@@ -354,44 +364,35 @@ def _to_list_clean(val):
     return [s] if s else []
 
 
-def merge_variant_labels(attributes, labels_key="labels"):
+def merge_variant_attributes(attributes, merging_rules=VARIANT_MERGING):
     """
-    Variant-level logic:
-      - If `labels` exists: append only `*.custom.additional_label`
-      - Else: create `labels` from `*.custom.additional_label` + `*.custom.product_labels_values`
-    Supports both 'svm.*' and 'spvm.*' key styles.
+    Generic variant-level merge function.
+    For each entry in VARIANT_MERGING:
+      - Collect all values from the listed keys
+      - Merge them into the given target key
+      - Deduplicate while preserving order
     """
-    has_existing = labels_key in attributes
-    existing = _to_list_clean(attributes.get(labels_key, []))
+    for source_keys, target_key in merging_rules:
+        combined = []
 
-    # Prefer svm.* (produced by this script); fall back to spvm.* if present
-    add_val = attributes.get("svm.custom.additional_label")
-    if add_val is None:
-        add_val = attributes.get("spvm.custom.additional_label")
-    add_list = _to_list_clean(add_val)
+        for key in source_keys:
+            if key in attributes:
+                combined.extend(_to_list_clean(attributes[key]))
 
-    if has_existing:
-        combined = existing + add_list
-    else:
-        vals_val = attributes.get("svm.custom.product_labels_values")
-        if vals_val is None:
-            vals_val = attributes.get("spvm.custom.product_labels_values")
-        vals_list = _to_list_clean(vals_val)
-        combined = add_list + vals_list
+        # Deduplicate while preserving order
+        seen = set()
+        merged = [x for x in combined if not (x in seen or seen.add(x))]
 
-    # Deduplicate while preserving order
-    seen = set()
-    merged = [x for x in combined if not (x in seen or seen.add(x))]
-    if merged:
-        attributes[labels_key] = merged
-    # If nothing to add, leave as-is (do not create empty labels)
+        if merged:
+            attributes[target_key] = merged
 
 
 def create_variant(shopify_variant, identifiers = None):
   attrs = create_attributes(shopify_variant, "sv")
 
   # ---- VARIANT-LEVEL LABEL MERGE ----
-  merge_variant_labels(attrs, "labels")
+  # merge_variant_labels(attrs, "labels")
+  merge_variant_attributes(attrs, VARIANT_MERGING)
 
   return {
     "id": create_id(shopify_variant, identifiers),
