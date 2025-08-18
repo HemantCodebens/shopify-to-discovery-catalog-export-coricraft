@@ -110,7 +110,7 @@ PRODUCT_METAFIELD_MAPPINGS = [
     ["spm.custom.legs", "legs", 1, lambda x: get_metaobject_labels_with_images( x, graphql_client)],
     ["spm.custom.material", "material", 1, lambda x: get_metaobject_labels_with_images( x, graphql_client)],
     # ["svm.custom.product_labels", "labels", 1, lambda x: get_metaobject_labels_only( x, graphql_client)],
-    ["svm.custom.product_labels_values", "labels", 1, lambda x: x.split(",") if isinstance(x, str) else x],
+    # ["svm.custom.product_labels_values", "labels", 1, lambda x: x.split(",") if isinstance(x, str) else x],
    
 ]
 
