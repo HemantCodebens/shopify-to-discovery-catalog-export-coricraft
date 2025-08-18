@@ -222,145 +222,6 @@ def get_metaobject_labels_with_images(gid_list, graphql_client):
     return json.dumps(enriched_items)
 
 
-# def get_metaobject_labels_with_images(gid_list, graphql_client):
-#     if not gid_list:
-#         return []
-
-#     if isinstance(gid_list, str):
-#         gid_list = json.loads(gid_list)
-
-#     query = """
-#     query ($ids: [ID!]!) {
-#       nodes(ids: $ids) {
-#         ... on Metaobject {
-#           fields {
-#             key
-#             value
-#             reference {
-#               ... on MediaImage {
-#                 image {
-#                   transformedSrc(maxWidth: 100, maxHeight: 100)
-#                 }
-#               }
-#             }
-#           }
-#         }
-#       }
-#     }
-#     """
-
-#     CHUNK_SIZE = 100
-#     enriched_items = []
-
-#     for i in range(0, len(gid_list), CHUNK_SIZE):
-#         chunk = gid_list[i:i + CHUNK_SIZE]
-#         response = graphql_client.execute(query, {"ids": chunk})
-
-#         try:
-#             result = json.loads(response)
-#         except json.JSONDecodeError:
-#             continue
-
-#         nodes = result.get("data", {}).get("nodes", [])
-#         for node in nodes:
-#             if not node:
-#                 continue
-
-#             label = None
-#             image_url = None
-
-#             for field in node.get("fields", []):
-#                 if field.get("key") == "label":
-#                     label = field.get("value")
-#                 ref = field.get("reference")
-#                 if ref and ref.get("image"):
-#                     image_url = ref["image"].get("transformedSrc")
-
-#             # if label and image_url:
-#             #     enriched_items.append({
-#             #         "name": label,
-#             #         "imageUrl": image_url
-#             #     })
-#             if label and image_url:
-#                 enriched_items.append({
-#                     "name": label,
-#                     "imageUrl": image_url
-#                 })
-#     return enriched_items 
-
-
-
-
-# def get_image_urls_from_metaobjects(gid_list, graphql_client):
-#     if not gid_list:
-#         return []
-
-#     query = """
-#     query ($ids: [ID!]!) {
-#       nodes(ids: $ids) {
-#         ... on Metaobject {
-#           fields {
-#             key
-#             value
-#             reference {
-#               ... on MediaImage {
-#                 image {
-#                   transformedSrc(maxWidth: 100, maxHeight: 100)
-#                 }
-#               }
-#             }
-#           }
-#         }
-#       }
-#     }
-#     """
-
-#     CHUNK_SIZE = 100
-#     results = []
-#     label_only_list = []
-
-#     for i in range(0, len(gid_list), CHUNK_SIZE):
-#         chunk = gid_list[i:i + CHUNK_SIZE]
-#         response = graphql_client.execute(query, {"ids": chunk})
-
-#         try:
-#             result = json.loads(response)
-#         except json.JSONDecodeError as e:
-#             raise e
-
-#         if not isinstance(result, dict):
-#             continue
-
-#         nodes = result.get("data", {}).get("nodes", [])
-#         for node in nodes:
-#             if not node:
-#                 continue
-
-#             label = None
-#             image_url = None
-
-#             for field in node.get("fields", []):
-#                 if field.get("key") == "label":
-#                     label = field.get("value")
-#                 ref = field.get("reference")
-#                 if ref and ref.get("image"):
-#                     image_url = ref["image"].get("transformedSrc")
-
-#             if label:
-#                 if image_url:
-#                     results.append({
-#                         "name": label,
-#                         "imageUrl": image_url
-#                     })
-#                 else:
-#                     label_only_list.append(label)
-
-#     # Append label-only result as a single comma-separated string (if any)
-#     if label_only_list:
-#         results.append(", ".join(label_only_list))
-
-#     return results
-
 def get_image_urls_from_metaobjects(gid_list, graphql_client):
     if not gid_list:
         return []
@@ -432,74 +293,7 @@ def get_image_urls_from_metaobjects(gid_list, graphql_client):
         return labels_without_images
 
 
-
-
-
-# def get_image_urls_from_metaobjects(gid_list, graphql_client):
-#     if not gid_list:
-#         return []
-
-#     query = """
-#     query ($ids: [ID!]!) {
-#       nodes(ids: $ids) {
-#         ... on Metaobject {
-#           fields {
-#             key
-#             value
-#             reference {
-#               ... on MediaImage {
-#                 image {
-#                   transformedSrc(maxWidth: 100, maxHeight: 100)
-#                 }
-#               }
-#             }
-#           }
-#         }
-#       }
-#     }
-#     """
-
-#     CHUNK_SIZE = 100
-#     all_image_urls = []
-
-#     for i in range(0, len(gid_list), CHUNK_SIZE):
-#         chunk = gid_list[i:i + CHUNK_SIZE]
-#         response = graphql_client.execute(query, {"ids": chunk})
-
-#         try:
-#             result = json.loads(response)
-#         except json.JSONDecodeError as e:
-#             raise e
-
-#         if not isinstance(result, dict):
-#             continue
-
-#         if "data" not in result or result["data"] is None:
-#             continue
-
-#         nodes = result["data"].get("nodes", [])
-#         for node in nodes:
-#             if not node:
-#                 continue
-
-#             for field in node.get("fields", []):
-#                 ref = field.get("reference")
-#                 if ref and ref.get("image"):
-#                     img_url = ref["image"].get("transformedSrc")
-#                     if img_url:
-#                         all_image_urls.append(img_url)
-
-#     return all_image_urls
-
 def create_product(shopify_product, pid_identifiers = None, vid_identifiers = None):
-
-    # elif "collections" in prop:
-
-    # elif "metafields" in prop:
-    #   for metafield in v:
-    #     attributes["spm." + metafield["key"]] = metafield["value"]
-    # else:
-    #   attributes["sp." + prop] = v
 
   return {
     "id": create_id(shopify_product, identifiers=pid_identifiers), 
@@ -536,23 +330,72 @@ def create_variants(shopify_product, identifiers = None):
   return variants
 
 
-def create_variant(shopify_variant, identifiers = None):
+# -------------------------
+# LABEL MERGE HELPERS (variant-level)
+# -------------------------
+def _to_list_clean(val):
+    """Normalize val into a list of non-empty, stripped strings."""
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return [str(x).strip() for x in val if str(x).strip()]
+    if isinstance(val, str):
+        # Try to parse JSON array first
+        try:
+            j = json.loads(val)
+            if isinstance(j, list):
+                return [str(x).strip() for x in j if str(x).strip()]
+        except Exception:
+            pass
+        # Fallback: comma-separated
+        return [s.strip() for s in val.split(",") if s.strip()]
+    # Any other scalar
+    s = str(val).strip()
+    return [s] if s else []
 
-  # attributes = {}
-  # for k,v in shopify_variant.items():
-  #   if "metafields" in k:
-  #     for metafield in v:
-  #       # each metafield added to attributes with svm. namespace to avoid collisions
-  #       #   and identify it came from a shopify variant metafield
-  #       attributes["svm." + metafield["key"]] = metafield["value"]
-  #   else:
-  #     # each variant property added as attribute with sv. namespace
-  #     #   and to identify it came from a shopify variant property
-  #     attributes["sv." + k] = v
+
+def merge_variant_labels(attributes, labels_key="labels"):
+    """
+    Variant-level logic:
+      - If `labels` exists: append only `*.custom.additional_label`
+      - Else: create `labels` from `*.custom.additional_label` + `*.custom.product_labels_values`
+    Supports both 'svm.*' and 'spvm.*' key styles.
+    """
+    has_existing = labels_key in attributes
+    existing = _to_list_clean(attributes.get(labels_key, []))
+
+    # Prefer svm.* (produced by this script); fall back to spvm.* if present
+    add_val = attributes.get("svm.custom.additional_label")
+    if add_val is None:
+        add_val = attributes.get("spvm.custom.additional_label")
+    add_list = _to_list_clean(add_val)
+
+    if has_existing:
+        combined = existing + add_list
+    else:
+        vals_val = attributes.get("svm.custom.product_labels_values")
+        if vals_val is None:
+            vals_val = attributes.get("spvm.custom.product_labels_values")
+        vals_list = _to_list_clean(vals_val)
+        combined = add_list + vals_list
+
+    # Deduplicate while preserving order
+    seen = set()
+    merged = [x for x in combined if not (x in seen or seen.add(x))]
+    if merged:
+        attributes[labels_key] = merged
+    # If nothing to add, leave as-is (do not create empty labels)
+
+
+def create_variant(shopify_variant, identifiers = None):
+  attrs = create_attributes(shopify_variant, "sv")
+
+  # ---- VARIANT-LEVEL LABEL MERGE ----
+  merge_variant_labels(attrs, "labels")
 
   return {
     "id": create_id(shopify_variant, identifiers),
-    "attributes": create_attributes(shopify_variant, "sv")
+    "attributes": attrs
     }
 
 
